@@ -10,12 +10,11 @@ echo "Do you want to setup Apache-DUC? (Y/n)"
 read apacheyn
 echo "Setup can beginn"
 
-if [ $noipyn == 'Y' ] || [ $noipyn == 'y' ]
+if [ $noipyn == "Y" ] || [ $noipyn == "y" ]
 then
     apt update && apt upgrade -y
     apt install wget python3 -y
     cd /root/
-    wget https://nextcloud.longrise.biz/download/noipduc.service
     clear
     echo "What is your E-Mail from NO-IP?"
     read noip-email
