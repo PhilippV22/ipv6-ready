@@ -1,3 +1,5 @@
+#!/bin/bash
+
 echo "Getting Systeminfo..."
 ipv6=$(ip -6 addr show dev eth0 scope global | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d')
 echo "$ipv6"
