@@ -56,5 +56,5 @@ wget https://nextcloud.longrise.biz/download/duc.sh
 
 chmod 777 duc.sh
 
-
+shutdown -r now
  
