@@ -38,13 +38,11 @@ systemctl start noipduc.service
 
 systemctl status noipduc.service
 
-crontab -l > mycron
+printf "3 * * * * /bin/bash /root/duc.sh && /bin/systemctl restart noipduc\n@reboot /bin/bash /root/duc.sh && /bin/systemctl restart noipduc" > /root/cron
 
-printf "3 * * * * /bin/bash /root/duc.sh && /bin/systemctl restart noipduc\n@reboot /bin/bash /root/duc.sh && /bin/systemctl restart noipduc" >> mycron
+crontab /root/cron
 
-crontab mycron
-
-rm mycron
+rm /root/cron
 
 echo "NOIP-DUC is installd!!!"
 
