@@ -13,8 +13,8 @@ encrypted_noip_username=$(cat encrypted_noip_username.txt)
 encrypted_noip_password=$(cat encrypted_noip_password.txt)
 
 # Noip-Anmeldeinformationen entschlüsseln
-noip_username=$(echo $encrypted_noip_username | openssl enc -d -aes-256-cbc -k secret)
-noip_password=$(echo $encrypted_noip_password | openssl enc -d -aes-256-cbc -k secret)
+noip_username=$(echo $encrypted_noip_username)
+noip_password=$(echo $encrypted_noip_password)
 
 # Aktuelle IPv6-Adresse abrufen
 ipv6=$(curl -s "http://checkip.dyndns.org" | sed -e 's/.*Current IP Address: //' -e 's/<.*$//')
