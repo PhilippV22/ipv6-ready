@@ -1,60 +1,76 @@
 #!/bin/bash
 
-echo "Getting Systeminfo..."
+# Überprüfen, ob das System Ubuntu oder Debian ist
+if [ "$(lsb_release -is)" != "Ubuntu" ] && [ "$(lsb_release -is)" != "Debian" ]
+then
+  # Das Skript wird nicht auf anderen Distributionen unterstützt
+  echo "Das Skript wird nur auf Ubuntu oder Debian-Systemen unterstützt."
+  exit 1
+fi
 
-ipv6=$(ip -6 addr show dev eth0 scope global | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d')
+# Benutzereingabe abfragen, welche Domain bei NoIp aktualisiert werden soll
+echo "Bitte geben Sie die Domain ein, die bei NoIp aktualisiert werden soll:"
+read domain
 
-echo "$ipv6"
+# Benutzereingabe abfragen, ob ein Apache2-Letsencrypt-Zertifikat erstellt werden soll
+echo "Möchten Sie ein Apache2-Letsencrypt-Zertifikat erstellen? (j/n)"
+read create_cert
 
-clear
+# Überprüfen, ob verschlüsselte Noip-Dateien vorhanden sind
+if [ ! -f "encrypted_noip_username.txt" ] || [ ! -f "encrypted_noip_password.txt" ]
+then
+  # Benutzereingabe abfragen und verschlüsselte Noip-Dateien erstellen
+  read -p "Bitte geben Sie den Noip-Benutzernamen ein: " noip_username
+  read -s -p "Bitte geben Sie das Noip-Passwort ein: " noip_password
+  echo $noip_username | openssl enc -e -aes-256-cbc -k secret > encrypted_noip_username.txt
+  echo $noip_password | openssl enc -e -aes-256-cbc -k secret > encrypted_noip_password.txt
+fi
 
-echo "Setup can beginn"
+# Überprüfen, ob das Skript als root oder als sudo ausgeführt wird
+while true
+do
+  # Update und Upgrade des Systems
+  apt-get update -y
+  apt-get upgrade -y
 
-apt update && apt upgrade -y
+  # Apache2, Certbot und PHP installieren
+  apt-get install apache2 certbot php -y
 
-apt install wget python3 -y
+  # Verschlüsseltes Noip-Passwort und Benutzernamen abrufen
+  encrypted_noip_username=$(cat encrypted_noip_username.txt)
+  encrypted_noip_password=$(cat encrypted_noip_password.txt)
 
-cd /root/
+  # Noip-Anmeldeinformationen entschlüsseln und neu verschlüsseln
+  noip_username=$(echo $encrypted_noip_username | openssl enc -d -aes-256-cbc -k secret)
+  noip_password=$(echo $encrypted_noip_password | openssl enc -d -aes-256-cbc -k secret)
+  echo $noip_username | openssl enc -e -aes-256-cbc -k secret > encrypted_noip_username.txt
+  echo $noip_password | openssl enc -e -aes-256-cbc -k secret > encrypted_noip_password.txt
 
-clear
+  # Noip IPv6 DUC herunterladen und mit den erforderlichen Daten ausfüllen
+  wget https://www.noip.com/download/linux/ipv6-duc-linux.tar.gz
+  tar xvfz ipv6-duc-linux.tar.gz
+  
+    # Noip IPv6 DUC konfigurieren und starten
+  cd ipv6-duc-linux
+  sed -i "s/USERNAME/$noip_username/g" duc.conf
+  sed -i "s/PASSWORD/$noip_password/g" duc.conf
+  ./ipv6-duc -c duc.conf
+  
+  # Aktuelle globale IPv6-Adresse abrufen und in der ports.conf eintragen
+  ipv6=$(curl -s "http://checkip.dyndns.org" | sed -e 's/.*Current IP Address: //' -e 's/<.*$//')
+  sed -i "s/Listen \[::\]:80/Listen [$ipv6]:80/g" /etc/apache2/ports.conf
 
-echo "What is your E-Mail from NO-IP?"
-
-read noipemail
-
-echo "What is your Password from NO-IP?"
-read noippassword
-
-echo "What is the Domain that you want to update?"
-read noipdomain
-
-printf "account = ('$noipemail', '$noippassword')\ntoBeUpdated = '$noipdomain'\nwhichOne = 1\nupdateFrequency = 10\nimport requests\nimport subprocess\nfrom time import sleep\nimport os\nupdateurl = ”http://dynupdate.no-ip.com/nic/update”\nlastaddr = str() \nwhile True:\n    hostnameReturn = subprocess.Popen(”hostname -I”, shell=True, stdout=subprocess.PIPE)\n    ipv6addrs = hostnameReturn.stdout.read()\n	   ipv6addr = str(ipv6addrs).split(' ')[whichOne]\n	   print(ipv6addr)  # print out just to be sure\n    parameters = {'hostname': toBeUpdated, 'myipv6': ipv6addr}\n    requestHeader = {'User-Agent': 'Personal noipv6-duc_1_0.py/linux-v5.0'}\n    if lastaddr != ipv6addr:\n        lastaddr = ipv6addr # update the latest ip address\n         serverreturn = requests.get(url = updateurl, params = parameters, auth=account)\n         if(serverreturn.status_code == 911):\n            print(”Updating paused. No-IP server asks to stop requesting due to a server-side error for 30 minutes.”)\n            sleep(1800) # sleep 1800 seconds = 30 minutes\n        print(serverreturn.url)\n         print(serverreturn.text)\n        os.system('/root/duc.sh')\n         print(”updated. noice job!”)\n    sleep(updateFrequency)" > /root/noipduc.py
-
-printf "[Unit]\nDescription=NOIPDUC\n\n[Service]\nType=simple\nExecStart=/bin/python3 /root/noipduc.py\nRestart=always\nRestartPreventExitStatus=yes\n\n[Install]\nWantedBy=multi-user.target" > /lib/systemd/system/noipduc.service
-
-systemctl daemon-reload
-
-systemctl start noipduc.service
-
-systemctl status noipduc.service
-
-printf "3 * * * * /bin/bash /root/duc.sh && /bin/systemctl restart noipduc\n@reboot /bin/bash /root/duc.sh && /bin/systemctl restart noipduc" > /root/cron
-
-crontab /root/cron
-
-rm /root/cron
-
-echo "NOIP-DUC is installd!!!"
-
-clear
-
-cd /root/
-
-apt install apache2 certbot python3 python3-certbot-apache php -y
-
-wget https://nextcloud.longrise.biz/download/duc.sh
-
-chmod 777 duc.sh
-
-shutdown -r now
+  # Apache2 neu starten
+  service apache2 restart
+  
+  if [ "$create_cert" == "j" ]
+  then
+    # Benutzereingabe abfragen und Apache2-Letsencrypt-Zertifikat erstellen
+    read -p "Bitte geben Sie die E-Mail-Adresse für das Zertifikat ein: " email
+    certbot --apache -m $email -d $domain
+  fi
+  
+  # Eine Minute warten, bevor das Skript erneut ausgeführt wird
+  sleep 60
+done
  
