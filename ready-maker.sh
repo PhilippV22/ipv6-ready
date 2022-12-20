@@ -12,10 +12,6 @@ fi
 echo "Bitte geben Sie die Domain ein, die bei NoIp aktualisiert werden soll:"
 read domain
 
-# Benutzereingabe abfragen, ob ein Apache2-Letsencrypt-Zertifikat erstellt werden soll
-echo "Möchten Sie ein Apache2-Letsencrypt-Zertifikat erstellen? (j/n)"
-read create_cert
-
 # Überprüfen, ob verschlüsselte Noip-Dateien vorhanden sind
 if [ ! -f "encrypted_noip_username.txt" ] || [ ! -f "encrypted_noip_password.txt" ]
 then
@@ -26,51 +22,37 @@ then
   echo $noip_password | openssl enc -e -aes-256-cbc -k secret > encrypted_noip_password.txt
 fi
 
-# Überprüfen, ob das Skript als root oder als sudo ausgeführt wird
-while true
-do
-  # Update und Upgrade des Systems
-  apt-get update -y
-  apt-get upgrade -y
+# Verschlüsseltes Noip-Passwort und Benutzernamen abrufen
+encrypted_noip_username=$(cat encrypted_noip_username.txt)
+encrypted_noip_password=$(cat encrypted_noip_password.txt)
 
-  # Apache2, Certbot und PHP installieren
-  apt-get install apache2 certbot php -y
+# Noip-Anmeldeinformationen entschlüsseln und neu verschlüsseln
+noip_username=$(echo $encrypted_noip_username | openssl enc -d -aes-256-cbc -k secret)
+noip_password=$(echo $encrypted_noip_password | openssl enc -d -aes-256-cbc -k secret)
+echo $noip_username | openssl enc -e -aes-256-cbc -k secret > encrypted_noip_username.txt
+echo $noip_password | openssl enc -e -aes-256-cbc -k secret > encrypted_noip_password.txt
 
-  # Verschlüsseltes Noip-Passwort und Benutzernamen abrufen
-  encrypted_noip_username=$(cat encrypted_noip_username.txt)
-  encrypted_noip_password=$(cat encrypted_noip_password.txt)
+# Benutzereingabe abfragen, ob ein Apache2-Letsencrypt-Zertifikat erstellt werden soll
+echo "Möchten Sie ein Apache2-Letsencrypt-Zertifikat erstellen? (j/n)"
+read create_cert
 
-  # Noip-Anmeldeinformationen entschlüsseln und neu verschlüsseln
-  noip_username=$(echo $encrypted_noip_username | openssl enc -d -aes-256-cbc -k secret)
-  noip_password=$(echo $encrypted_noip_password | openssl enc -d -aes-256-cbc -k secret)
-  echo $noip_username | openssl enc -e -aes-256-cbc -k secret > encrypted_noip_username.txt
-  echo $noip_password | openssl enc -e -aes-256-cbc -k secret > encrypted_noip_password.txt
+if [ "$create_cert" == "j" ]
+then
+  # Benutzereingabe abfragen und Apache2-Letsencrypt-Zertifikat erstellen
+  read -p "Bitte geben Sie die E-Mail-Adresse für das Zertifikat ein: " email
+  certbot --apache -m $email -d $domain
+fi
 
-  # Noip IPv6 DUC herunterladen und mit den erforderlichen Daten ausfüllen
-  wget https://www.noip.com/download/linux/ipv6-duc-linux.tar.gz
-  tar xvfz ipv6-duc-linux.tar.gz
-  
-    # Noip IPv6 DUC konfigurieren und starten
-  cd ipv6-duc-linux
-  sed -i "s/USERNAME/$noip_username/g" duc.conf
-  sed -i "s/PASSWORD/$noip_password/g" duc.conf
-  ./ipv6-duc -c duc.conf
-  
-  # Aktuelle globale IPv6-Adresse abrufen und in der ports.conf eintragen
-  ipv6=$(curl -s "http://checkip.dyndns.org" | sed -e 's/.*Current IP Address: //' -e 's/<.*$//')
-  sed -i "s/Listen \[::\]:80/Listen [$ipv6]:80/g" /etc/apache2/ports.conf
+# Aktuelle globale IPv6-Adresse abrufen und in der ports.conf eintragen
+ipv6=$(curl -s "http://checkip.dyndns.org" | sed -e 's/.*Current IP Address: //' -e 's/<.*$//')
+sed -i "s/Listen \[::\]:80/Listen [$ipv6]:80/g" /etc/apache2/ports.conf
 
-  # Apache2 neu starten
-  service apache2 restart
-  
-  if [ "$create_cert" == "j" ]
-  then
-    # Benutzereingabe abfragen und Apache2-Letsencrypt-Zertifikat erstellen
-    read -p "Bitte geben Sie die E-Mail-Adresse für das Zertifikat ein: " email
-    certbot --apache -m $email -d $domain
-  fi
-  
-  # Eine Minute warten, bevor das Skript erneut ausgeführt wird
-  sleep 60
+# Apache2 neu starten
+service apache2 restart
+
+# Eine Minute warten, bevor das Skript erneut ausgeführt wird
+sleep 60
 done
+
+
  
