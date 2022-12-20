@@ -11,13 +11,15 @@ fi
 # Verschlüsseltes Noip-Passwort und Benutzernamen abrufen
 encrypted_noip_username=$(cat encrypted_noip_username.txt)
 encrypted_noip_password=$(cat encrypted_noip_password.txt)
+encrypted_noip_domain=$(cat encrypted_noip_domain.txt)
 
 # Noip-Anmeldeinformationen entschlüsseln
 noip_username=$(echo $encrypted_noip_username)
 noip_password=$(echo $encrypted_noip_password)
+noip_domain=$(echo $encrypted_noip_domain)
 
 # Aktuelle IPv6-Adresse abrufen
 ipv6=$(curl -s "http://checkip.dyndns.org" | sed -e 's/.*Current IP Address: //' -e 's/<.*$//')
 
 # Noip-API aufrufen, um die IPv6-Adresse der angegebenen Domain zu aktualisieren
-curl "https://dynupdate.no-ip.com/nic/update?hostname=$DOMAIN&myip=$ipv6" -u "$noip_username:$noip_password"
+curl "https://dynupdate.no-ip.com/nic/update?hostname=$domain&myip=$ipv6" -u "$noip_username:$noip_password"
