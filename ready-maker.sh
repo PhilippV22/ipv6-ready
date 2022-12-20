@@ -32,6 +32,9 @@ noip_password=$(echo $encrypted_noip_password | openssl enc -d -aes-256-cbc -k s
 echo $noip_username | openssl enc -e -aes-256-cbc -k secret > encrypted_noip_username.txt
 echo $noip_password | openssl enc -e -aes-256-cbc -k secret > encrypted_noip_password.txt
 
+chmod 777 ipv6-duc.sh
+./ipv6-duc.sh
+
 # Benutzereingabe abfragen, ob ein Apache2-Letsencrypt-Zertifikat erstellt werden soll
 echo "Möchten Sie ein Apache2-Letsencrypt-Zertifikat erstellen? (j/n)"
 read create_cert
