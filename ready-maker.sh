@@ -39,19 +39,19 @@ chmod 777 ipv6-duc.sh
 echo "Möchten Sie ein Apache2-Letsencrypt-Zertifikat erstellen? (j/n)"
 read create_cert
 
-if [ "$create_cert" == "j" ]
-then
-  # Benutzereingabe abfragen und Apache2-Letsencrypt-Zertifikat erstellen
-  read -p "Bitte geben Sie die E-Mail-Adresse für das Zertifikat ein: " email
-  certbot --apache -m $email -d $domain
-fi
-
 # Aktuelle globale IPv6-Adresse abrufen und in der ports.conf eintragen
 ipv6=$(curl -s "http://checkip.dyndns.org" | sed -e 's/.*Current IP Address: //' -e 's/<.*$//')
 sed -i "s/Listen \[::\]:80/Listen [$ipv6]:80/g" /etc/apache2/ports.conf
 
 # Apache2 neu starten
 service apache2 restart
+
+if [ "$create_cert" == "j" ]
+then
+  # Benutzereingabe abfragen und Apache2-Letsencrypt-Zertifikat erstellen
+  read -p "Bitte geben Sie die E-Mail-Adresse für das Zertifikat ein: " email
+  certbot --apache -m $email -d $domain
+fi
 
 # Eine Minute warten, bevor das Skript erneut ausgeführt wird
 sleep 60
