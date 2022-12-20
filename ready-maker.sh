@@ -20,6 +20,7 @@ then
   read -s -p "Bitte geben Sie das Noip-Passwort ein: " noip_password
   echo $noip_username > encrypted_noip_username.txt
   echo $noip_password > encrypted_noip_password.txt
+  echo $domain > encrypted_noip_domain.txt
 fi
 
 # Verschlüsseltes Noip-Passwort und Benutzernamen abrufen
