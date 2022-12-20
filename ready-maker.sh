@@ -18,19 +18,13 @@ then
   # Benutzereingabe abfragen und verschlüsselte Noip-Dateien erstellen
   read -p "Bitte geben Sie den Noip-Benutzernamen ein: " noip_username
   read -s -p "Bitte geben Sie das Noip-Passwort ein: " noip_password
-  echo $noip_username | openssl enc -e -aes-256-cbc -k secret > encrypted_noip_username.txt
-  echo $noip_password | openssl enc -e -aes-256-cbc -k secret > encrypted_noip_password.txt
+  echo $noip_username > encrypted_noip_username.txt
+  echo $noip_password > encrypted_noip_password.txt
 fi
 
 # Verschlüsseltes Noip-Passwort und Benutzernamen abrufen
-encrypted_noip_username=$(cat encrypted_noip_username.txt)
-encrypted_noip_password=$(cat encrypted_noip_password.txt)
 
 # Noip-Anmeldeinformationen entschlüsseln und neu verschlüsseln
-noip_username=$(echo $encrypted_noip_username | openssl enc -d -aes-256-cbc -k secret)
-noip_password=$(echo $encrypted_noip_password | openssl enc -d -aes-256-cbc -k secret)
-echo $noip_username | openssl enc -e -aes-256-cbc -k secret > encrypted_noip_username.txt
-echo $noip_password | openssl enc -e -aes-256-cbc -k secret > encrypted_noip_password.txt
 
 chmod 777 ipv6-duc.sh
 ./ipv6-duc.sh
