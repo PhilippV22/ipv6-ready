@@ -19,7 +19,7 @@ noip_password=$(echo $encrypted_noip_password)
 noip_domain=$(echo $encrypted_noip_domain)
 
 # Aktuelle IPv6-Adresse abrufen
-ipv6=$(curl -s "http://checkip.dyndns.org" | sed -e 's/.*Current IP Address: //' -e 's/<.*$//')
+ipv6=$(ip -6 addr show dev eth0 scope global | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d')
 
 # Noip-API aufrufen, um die IPv6-Adresse der angegebenen Domain zu aktualisieren
 curl "https://dynupdate.no-ip.com/nic/update?hostname=$noip_domain&myip=$ipv6" -u "$noip_username:$noip_password"
