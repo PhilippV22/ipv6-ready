@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Ask user to provide domain name and email address
+read -p "What is the domain name to generate a certificate? " Domain
+read -p "What is the email address? " Email
+
+# Generate certificate
+certbot certonly --agree-tos --no-eff-email --email $Email -d $Domain
+
+# Print info message
+echo "Certificate Gneration is done!"
