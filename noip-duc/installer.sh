@@ -25,4 +25,4 @@ echo "IPV6=\$(curl -s https://ipv6.ident.me/)" >> noip-ipv6-update.sh
 echo "curl -s \"https://\${USERNAME}:\${PASSWORD}@dyn.dns.he.net/nic/update?hostname=\${DOMAIN}&myip=\${IPV6}\"" >> noip-ipv6-update.sh
 
 # Create cron job
-crontab -l | { cat; echo "*/30 * * * * /home/$USERNAME/noip-ipv6-update.sh"; } | crontab -
+crontab -l | { cat; echo "*/30 * * * * /root/noip-ipv6-update.sh"; } | crontab -
