@@ -1,11 +1,17 @@
 #!/bin/bash
 
-# Ask user to provide domain name and email address
-read -p "What is the domain name to generate a certificate? " Domain
-read -p "What is the email address? " Email
+#Installiere Cerbot und Apache2
+apt update && apt upgrade
+apt install certbot apache2
 
-# Generate certificate
-certbot certonly --agree-tos --no-eff-email --email $Email -d $Domain
+#Domain und Email abfragen
+read -p 'Type Domain (domain.name): ' domainName
+read -p 'Type Email: ' emailAddress
 
-# Print info message
-echo "Certificate Gneration is done!"
+#Zertifikat erstellen
+certbot certonly --domain $domainName --email $emailAddress --agree-tos --non-interactive
+
+#SSL Weiterleitung auf Apache2 konfigurieren
+a2enmod ssl
+a2ensite default-ssl
+systemctl restart apache2
