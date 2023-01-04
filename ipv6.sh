@@ -33,7 +33,7 @@ echo "* * * * * /root/ipv6-ready/duc.py" | crontab -
 # Aktualisiere die IPv6-Adresse
 function update_ipv6 {
   # Abfrage der aktuellen IPv6-Adresse
-  ipv6_address=$(curl -s "https://api.ipify.org?format=ipv6")
+  ipv6_address=$(ip -6 addr show dev eth0 scope global | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d')
 
   # Ersetzen der IPv6-Adresse in der Konfigurationsdatei von Apache2
   sed -i "s/^Listen.*/Listen [${ipv6_address}]:80\nListen [${ipv6_address}]:443/" /etc/apache2/ports.conf
