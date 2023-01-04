@@ -35,12 +35,8 @@ function update_ipv6 {
   # Abfrage der aktuellen IPv6-Adresse
   ipv6_address=$(ip -6 addr show dev eth0 scope global | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d')
 
-  # Löschen aller "Listen"-Zeilen in der Konfigurationsdatei von Apache2
-  sed -i "/^Listen/d" /etc/apache2/ports.conf
-
-  # Hinzufügen der neuen "Listen"-Zeile in der Konfigurationsdatei von Apache2
-  echo "Listen [${ipv6_address}]:443" >> /etc/apache2/ports.conf
-  echo "Listen [${ipv6_address}]:80" >> /etc/apache2/ports.conf
+  # Ersetzen aller IPv6-Adressen in der Konfigurationsdatei von Apache2
+  sed -i "s/\[[0-9a-f:]\+\]/${ipv6_address}/g" /etc/apache2/ports.conf
 
   # Neustarten von Apache2
   systemctl restart apache2
