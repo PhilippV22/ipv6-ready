@@ -27,22 +27,8 @@ else
   HOSTNAME=$(tail -n 2 /root/no-ip2.conf | head -n 1)
 fi
 
-# Erstelle einen DUC für No-IP
-cat > /root/update_ip.sh << EOF
-#!/bin/bash
-
-# Hole die aktuelle IPv6-Adresse
-IP=$(ip -6 addr show scope global | grep -oE '([0-9a-fA-F:]{1,39})' | head -1)
-
-# Aktualisiere die No-IP-Host-Domain mit der aktuellen IPv6-Adresse
-curl "http://dynupdate.no-ip.com/nic/update?hostname=$HOSTNAME&myip=$IP" -u "$USERNAME:$PASSWORD"
-EOF
-
-# Setze die Berechtigungen für das Update-Skript
-chmod +x /root/update_ip.sh
-
 # Trage das Update-Skript im Crontab ein, um die IPv6-Adresse jede Minute zu aktualisieren
-echo "* * * * * /root/update_ip.sh" | crontab -
+echo "* * * * * /root/ipv6-ready/duc.py" | crontab -
 
 # Aktualisiere die IPv6-Adresse
 function update_ipv6 {
@@ -59,4 +45,4 @@ function update_ipv6 {
 update_ipv6
 
 # Trage den DUC im Crontab ein, um ihn jede Minute auszuführen
-echo "* * * * * /root/ipv6-ready/ipv6.sh.sh" | crontab -
+echo "* * * * * /root/ipv6-ready/ipv6.sh" | crontab -
