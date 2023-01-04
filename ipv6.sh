@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Prüfe, ob Apache2 und curl bereits installiert sind
+if ! [ -x "$(command -v apache2)" ] || ! [ -x "$(command -v curl)" ]; then
+  # Installiere Apache2 und curl
+  apt-get update
+  apt-get install apache2 curl php -y
+fi
+
 # Prüfe, ob die Konfigurationsdatei bereits existiert
 if [ ! -f "/root/no-ip2.conf" ]; then
   # Frage Benutzername und Passwort ab
@@ -20,14 +27,12 @@ else
   HOSTNAME=$(tail -n 2 /root/no-ip2.conf | head -n 1)
 fi
 
-apt install curl apache2 php -y
-
 # Erstelle einen DUC für No-IP
 cat > /root/update_ip.sh << EOF
 #!/bin/bash
 
 # Hole die aktuelle IPv6-Adresse
-IP=$(curl -s http://ipv6.icanhazip.com)
+IP=$(ip -6 addr show scope global | grep -oE '([0-9a-fA-F:]{1,39})' | head -1)
 
 # Aktualisiere die No-IP-Host-Domain mit der aktuellen IPv6-Adresse
 curl "http://dynupdate.no-ip.com/nic/update?hostname=$HOSTNAME&myip=$IP" -u "$USERNAME:$PASSWORD"
@@ -42,7 +47,7 @@ echo "* * * * * /root/update_ip.sh" | crontab -
 # Aktualisiere die IPv6-Adresse
 function update_ipv6 {
   # Ermittle die aktuelle IPv6-Adresse
-  IPV6=$(curl -s http://ipv6.icanhazip.com)
+  IPV6=$(ip -6 addr show scope global | grep -oE '([0-9a-fA-F:]{1,39})' | head -1)
 
   # Aktualisiere die Konfigurationsdatei von Apache2 mit der neuen IPv6-Adresse
   sed -i "s/Listen.*/Listen [$IPV6]:80/g" /etc/apache2/ports.conf
@@ -52,3 +57,6 @@ function update_ipv6 {
 }
 
 update_ipv6
+
+# Trage den DUC im Crontab ein, um ihn jede Minute auszuführen
+echo "* * * * * /root/ipv6-ready/ipv6.sh.sh" | crontab -
