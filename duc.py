@@ -1,11 +1,11 @@
 import requests
 
 # NO-IP Benutzername und Passwort
-username = "reinholzphilipp463@gmail.com"
-password = "77Philipp335698"
+username = "EMAIL"
+password = "PASSWORD"
 
 # Hostname, den Sie bei NO-IP registriert haben
-hostname = "shop.longrise.biz"
+hostname = "HOSTNAME"
 
 # Die aktuelle globale IPv6-Adresse abrufen
 ipv6_address = requests.get("http://ipv6.icanhazip.com").text.strip()
